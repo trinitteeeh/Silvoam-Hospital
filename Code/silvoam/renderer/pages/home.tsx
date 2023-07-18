@@ -1,62 +1,53 @@
-import React from "react";
+import React, { useEffect } from "react";
 import Head from "next/head";
+import Router from "next/router";
 import Button from "@mui/material/Button";
-import Dialog from "@mui/material/Dialog";
-import DialogTitle from "@mui/material/DialogTitle";
-import DialogContent from "@mui/material/DialogContent";
-import DialogContentText from "@mui/material/DialogContentText";
-import DialogActions from "@mui/material/DialogActions";
-import Typography from "@mui/material/Typography";
-import Link from "../components/Link";
-import { styled } from "@mui/material";
-import MiniDrawer from "../components/Drawer";
+import { Typography, styled } from "@mui/material";
 
-const Root = styled("div")(({ theme }) => {
-  return {
-    textAlign: "center",
-    paddingTop: theme.spacing(4),
-  };
-});
+const Root = styled("div")(({ theme }) => ({
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  justifyContent: "center",
+  minHeight: "100vh",
+  backgroundImage: `radial-gradient(circle at center, gray, white)`,
+  backgroundSize: "50%",
+  "& img": {
+    maxWidth: "30%",
+    height: "auto",
+  },
+  "& button": {
+    marginTop: theme.spacing(2),
+  },
+}));
 
 function Home() {
-  const [open, setOpen] = React.useState(false);
-  const handleClose = () => setOpen(false);
-  const handleClick = () => setOpen(true);
+  const handleButtonClick = () => {
+    Router.push("/unauthorized/signup");
+  };
+
+  useEffect(() => {
+    const currentUser = localStorage.getItem("id");
+    if (currentUser) {
+      Router.push("/dashboard");
+    }
+  }, []);
 
   return (
-    <MiniDrawer>
-      <React.Fragment>
-        <Head>
-          <title>Home - Nextron (with-typescript-material-ui)</title>
-        </Head>
-        <Root>
-          <Dialog open={open} onClose={handleClose}>
-            <DialogTitle>Super Secret Password</DialogTitle>
-            <DialogContent>
-              <DialogContentText>1-2-3-4-5</DialogContentText>
-            </DialogContent>
-            <DialogActions>
-              <Button color="primary" onClick={handleClose}>
-                OK
-              </Button>
-            </DialogActions>
-          </Dialog>
-          <Typography variant="h4" gutterBottom>
-            Material-UI
-          </Typography>
-          <Typography variant="subtitle1" gutterBottom>
-            with Nextron
-          </Typography>
-          <img src="/images/logo.png" />
-          <Typography gutterBottom>
-            <Link href="/next">Go to the next page</Link>
-          </Typography>
-          <Button variant="contained" color="secondary" onClick={handleClick}>
-            Super Secret Password
-          </Button>
-        </Root>
-      </React.Fragment>
-    </MiniDrawer>
+    <React.Fragment>
+      <Head>
+        <title>Landing Page</title>
+      </Head>
+      <Root>
+        <Typography variant="h2" gutterBottom>
+          Silvoam Hospital
+        </Typography>
+        <img src="/images/logo.png" alt="Logo" />
+        <Button variant="contained" color="secondary" onClick={handleButtonClick}>
+          Get Started
+        </Button>
+      </Root>
+    </React.Fragment>
   );
 }
 

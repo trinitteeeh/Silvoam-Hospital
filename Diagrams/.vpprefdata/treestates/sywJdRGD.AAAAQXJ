@@ -1,9 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ProjectTreeState projectID="XnYqVhGD.AAAAQBO" projectPath="/Users/trinity/Documents/TPA /Desktop/Answer/Diagrams/TPA Desktop.vpp">
-	<TreeState name="ModelRepository" viewX="0" viewY="0"/>
+	<TreeState name="ModelRepository" viewX="0" viewY="0">
+		<ExpandedPath>ModelRepository</ExpandedPath>
+	</TreeState>
 	<TreeState name="DiagramNavigator" viewX="0" viewY="0">
 		<ExpandedPath>DiagramNavigator</ExpandedPath>
 		<ExpandedPath>DiagramNavigator,UML Diagrams</ExpandedPath>
+		<ExpandedPath>UseCaseDiagram</ExpandedPath>
+		<ExpandedPath>ClassDiagram</ExpandedPath>
 		<ExpandedPath>ActivityDiagram</ExpandedPath>
 		<ExpandedPath>DiagramNavigator,Requirements Capturing</ExpandedPath>
 		<ExpandedPath>DiagramNavigator,Database Modeling</ExpandedPath>
@@ -22,7 +26,7 @@
 		<ExpandedPath>DiagramNavigator,Network Design</ExpandedPath>
 		<ExpandedPath>DiagramNavigator,General</ExpandedPath>
 		<ExpandedPath>DiagramNavigator,Others</ExpandedPath>
-		<SelectedPath>ActivityDiagram,OpWA_hGD.AAAAQxv</SelectedPath>
+		<SelectedPath>ClassDiagram,eVK5_hGD.AAAAR.3</SelectedPath>
 	</TreeState>
 	<TreeState name="ClassBrowser" viewX="0" viewY="0"/>
 	<TreeState name="LogicalView" viewX="0" viewY="0"/>

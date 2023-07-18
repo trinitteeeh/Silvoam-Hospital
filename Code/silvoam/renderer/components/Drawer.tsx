@@ -16,8 +16,6 @@ import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
-import InboxIcon from "@mui/icons-material/MoveToInbox";
-import MailIcon from "@mui/icons-material/Mail";
 import MenuItem from "@mui/material/MenuItem";
 import Menu from "@mui/material/Menu";
 import Badge from "@mui/material/Badge";
@@ -27,7 +25,16 @@ import SearchIcon from "@mui/icons-material/Search";
 import InputBase from "@mui/material/InputBase";
 import AuthContext from "../utils/AuthProvider";
 import { useRouter } from "next/router";
-import Link from "./Link";
+import DashboardIcon from "@mui/icons-material/Dashboard";
+import AssignmentIcon from "@mui/icons-material/Assignment";
+import AssignmentIndIcon from "@mui/icons-material/AssignmentInd";
+import AccessibleIcon from "@mui/icons-material/Accessible";
+import AirportShuttleIcon from "@mui/icons-material/AirportShuttle";
+import ArticleIcon from "@mui/icons-material/Article";
+import BedroomParentIcon from "@mui/icons-material/BedroomParent";
+import VaccinesIcon from "@mui/icons-material/Vaccines";
+import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
+import GroupIcon from "@mui/icons-material/Group";
 
 const drawerWidth = 240;
 
@@ -81,46 +88,6 @@ const AppBar = styled(MuiAppBar, {
       duration: theme.transitions.duration.enteringScreen,
     }),
   }),
-}));
-
-const Search = styled("div")(({ theme }) => ({
-  position: "relative",
-  borderRadius: theme.shape.borderRadius,
-  backgroundColor: alpha(theme.palette.common.white, 0.15),
-  "&:hover": {
-    backgroundColor: alpha(theme.palette.common.white, 0.25),
-  },
-  marginRight: theme.spacing(2),
-  marginLeft: 0,
-  width: "100%",
-  [theme.breakpoints.up("sm")]: {
-    marginLeft: theme.spacing(3),
-    width: "auto",
-  },
-}));
-
-const SearchIconWrapper = styled("div")(({ theme }) => ({
-  padding: theme.spacing(0, 2),
-  height: "100%",
-  position: "absolute",
-  pointerEvents: "none",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-}));
-
-const StyledInputBase = styled(InputBase)(({ theme }) => ({
-  color: "inherit",
-  "& .MuiInputBase-input": {
-    padding: theme.spacing(1, 1, 1, 0),
-    // vertical padding + font size from searchIcon
-    paddingLeft: `calc(1em + ${theme.spacing(4)})`,
-    transition: theme.transitions.create("width"),
-    width: "100%",
-    [theme.breakpoints.up("md")]: {
-      width: "20ch",
-    },
-  },
 }));
 
 const Drawer = styled(MuiDrawer, { shouldForwardProp: (prop) => prop !== "open" })(({ theme, open }) => ({
@@ -209,11 +176,41 @@ export default function MiniDrawer({ children }) {
   );
 
   let taskList = [];
-  if (user === null) {
-    taskList = ["Register"];
-  } else if (user.role == "admin") {
-    taskList = ["Registration Request"];
+  if (!user) {
+    taskList = [{ name: "Register", link: "/unauthorized/signin", icon: <DashboardIcon />, divider: true }];
+  } else if (user.role == "Admin") {
+    taskList = [
+      { name: "Dashboard", link: "/dashboard", icon: <DashboardIcon />, divider: true },
+      { name: "Registration Request", link: "/admin/manageRequest", icon: <AssignmentIcon />, divider: false },
+      { name: "Manage Staff", link: "/admin/manageStaff", icon: <AssignmentIndIcon />, divider: true },
+      { name: "Manage Room", link: "/manageRoom", icon: <BedroomParentIcon />, divider: false },
+      { name: "Manage Patient", link: "/admin/managePatient", icon: <AccessibleIcon />, divider: true },
+      { name: "Manage Ambulance", link: "/admin/manageAmbulance", icon: <AirportShuttleIcon />, divider: true },
+      { name: "Manage Certificate", link: "/manageCertificate", icon: <ArticleIcon />, divider: true },
+    ];
+  } else if (user.role == "Pharmacist") {
+    taskList = [
+      { name: "Dashboard", link: "/dashboard", icon: <DashboardIcon />, divider: true },
+      { name: "Manage Medicine", link: "/pharmacist/manageMedicine", icon: <VaccinesIcon />, divider: false },
+      { name: "Manage Prescription", link: "/managePrescription", icon: <ReceiptLongIcon />, Divider: false },
+    ];
+  } else if (user.role == "Doctor") {
+    taskList = [
+      { name: "Dashboard", link: "/dashboard", icon: <DashboardIcon />, divider: true },
+      { name: "Manage Appointment", link: "/manageAppointment", icon: <GroupIcon />, Divider: false },
+      { name: "Manage Prescription", link: "/managePrescription", icon: <ReceiptLongIcon />, Divider: true },
+      { name: "Manage Room", link: "/manageRoom", icon: <BedroomParentIcon />, divider: false },
+      { name: "Manage Certificate", link: "/manageCertificate", icon: <ArticleIcon />, divider: true },
+    ];
+  } else if (user.role == "Nurse") {
+    taskList = [
+      { name: "Dashboard", link: "/dashboard", icon: <DashboardIcon />, divider: true },
+      { name: "Manage Appointment", link: "/manageAppointment", icon: <GroupIcon />, Divider: false },
+      { name: "Manage Room", link: "/manageRoom", icon: <BedroomParentIcon />, divider: true },
+      { name: "Manage Certificate", link: "/manageCertificate", icon: <ArticleIcon />, divider: true },
+    ];
   } else {
+    taskList = [{ name: "Dashboard", link: "/dashboard", icon: <DashboardIcon />, divider: true }];
   }
 
   return (
@@ -236,12 +233,6 @@ export default function MiniDrawer({ children }) {
           <Typography variant="h6" noWrap component="div">
             Silvoam Hospital
           </Typography>
-          {/* <Search>
-            <SearchIconWrapper>
-              <SearchIcon />
-            </SearchIconWrapper>
-            <StyledInputBase placeholder="Search…" inputProps={{ "aria-label": "search" }} />
-          </Search> */}
           <Box sx={{ flexGrow: 1 }} />
           <Box sx={{ display: { xs: "none", md: "flex" } }}>
             <IconButton size="large" aria-label="show 17 new notifications" color="inherit">
@@ -259,14 +250,14 @@ export default function MiniDrawer({ children }) {
       <Drawer variant="permanent" open={open}>
         <DrawerHeader>
           <Typography variant="h6" noWrap component="div">
-            {user ? "Welcome " + user.name : "Welcom Anonnym"}
+            {user ? "Welcome " + user.name : "Welcome Anonnym"}
           </Typography>
           <IconButton onClick={handleDrawerClose}>{theme.direction === "rtl" ? <ChevronRightIcon /> : <ChevronLeftIcon />}</IconButton>
         </DrawerHeader>
         <Divider />
         <List>
           {taskList.map((text, index) => (
-            <ListItem key={text} disablePadding sx={{ display: "block" }} onClick={() => router.push("/admin/request")}>
+            <ListItem key={index} disablePadding sx={{ display: "block" }} onClick={() => router.push(text.link)}>
               <ListItemButton
                 sx={{
                   minHeight: 48,
@@ -281,10 +272,11 @@ export default function MiniDrawer({ children }) {
                     justifyContent: "center",
                   }}
                 >
-                  {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
+                  {text.icon}
                 </ListItemIcon>
-                <ListItemText primary={text} sx={{ opacity: open ? 1 : 0 }} />
+                <ListItemText primary={text.name} sx={{ opacity: open ? 1 : 0 }} />
               </ListItemButton>
+              {text.divider === true ? <Divider /> : <></>}
             </ListItem>
           ))}
         </List>
