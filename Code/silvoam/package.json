@@ -22,7 +22,8 @@
     "electron-serve": "^1.1.0",
     "electron-store": "^8.1.0",
     "firebase": "^9.22.2",
-    "firebase-admin": "^11.9.0"
+    "firebase-admin": "^11.9.0",
+    "react-hotkeys-hook": "^4.4.1"
   },
   "devDependencies": {
     "@emotion/cache": "^11.10.3",

@@ -28,7 +28,6 @@ interface Prescription {
   patient: Patient;
   status: string;
   bed: Bed;
-  medicineList: Medicine[];
 }
 
 interface Staff {
@@ -111,4 +110,17 @@ interface Bed {
   doctor: Staff;
 }
 
-export type { Medicine, Report, Prescription, Staff, Queue, Patient, Shift, Certificate, Job, Room, RoomType, Bed };
+interface Appointment {
+  id: string;
+  patient: Patient;
+  doctor: Staff;
+  roomID: string;
+  bed: Bed;
+  queueCategory: string;
+  queueNumber: number;
+  status: string;
+  appointmentDate: Dayjs;
+  result: string;
+}
+
+export type { Medicine, Report, Prescription, Staff, Queue, Patient, Shift, Certificate, Job, Room, RoomType, Bed, Appointment };

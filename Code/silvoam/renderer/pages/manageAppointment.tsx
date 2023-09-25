@@ -12,20 +12,22 @@ import { createTheme, ThemeProvider } from "@mui/material/styles";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import { Alert, Collapse, DialogActions, Icon, InputBase, InputLabel, MenuItem, Radio, Select, Snackbar, styled, Typography } from "@mui/material";
-import { collection, doc, getDoc, getDocs, query, setDoc, updateDoc } from "firebase/firestore";
+import { collection, deleteDoc, doc, getDoc, getDocs, query, setDoc, updateDoc } from "firebase/firestore";
 import { db } from "../firebase/firebase-config";
 import { Button, Dialog, DialogContent, DialogTitle, Fab, IconButton, TextField } from "@mui/material";
 import EnhancedTableToolbar from "../components/Table/TableToolbar";
 import TableHeader from "../components/Table/TableHeader";
 import AddIcon from "@mui/icons-material/Add";
-import { Prescription, Staff, Queue } from "../utils/interface";
+import { Appointment, Staff, Queue } from "../utils/interface";
 import CheckIcon from "@mui/icons-material/Check";
 import EditIcon from "@mui/icons-material/Edit";
+import dayjs from "dayjs";
+import DeleteIcon from "@mui/icons-material/Delete";
 
 const defaultTheme = createTheme();
 
-function Row(props: { row: Prescription; handleOpenDialog: (id: string) => void }) {
-  const { row, handleOpenDialog } = props;
+function Row(props: { row: Appointment; handleOpenDialog: (id: string) => void; handleDeleteAppointment: (id: string) => void }) {
+  const { row, handleOpenDialog, handleDeleteAppointment } = props;
   const [arrowOpen, setArrowOpen] = React.useState(false);
   const [isHovered, setIsHovered] = React.useState(false);
   const [isChecked, setIsChecked] = React.useState(false);
@@ -45,13 +47,13 @@ function Row(props: { row: Prescription; handleOpenDialog: (id: string) => void 
             {arrowOpen ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
           </IconButton>
         </TableCell>
-        <TableCell component="th" scope="row">
-          {row.id}
-        </TableCell>
-        <TableCell>{row.queue.name}</TableCell>
-        <TableCell>{row.roomNumber}</TableCell>
-        <TableCell>{row.doctor.name}</TableCell>
-        <TableCell>{row.patient.name}</TableCell>
+        <TableCell>{row.patient?.name}</TableCell>
+        <TableCell>{row.doctor?.name}</TableCell>
+        <TableCell>{row.roomID}</TableCell>
+        <TableCell>{row.bed?.number}</TableCell>
+        <TableCell>{row.appointmentDate.format("MM/DD/YYYY")}</TableCell>
+        <TableCell>{row.queueNumber}</TableCell>
+        <TableCell>{row.queueCategory}</TableCell>
         <TableCell>{row.status}</TableCell>
         <TableCell style={{ paddingRight: 0, marginRight: 0 }}>
           <Radio checked={isChecked} icon={isHovered ? <CheckIcon /> : <Radio />} checkedIcon={<CheckIcon />} onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)} />
@@ -61,12 +63,17 @@ function Row(props: { row: Prescription; handleOpenDialog: (id: string) => void 
             <EditIcon />
           </IconButton>
         </TableCell>
+        <TableCell style={{ paddingLeft: 0, marginLeft: 0 }}>
+          <IconButton aria-label="edit" onClick={() => handleDeleteAppointment(row.id)}>
+            <DeleteIcon />
+          </IconButton>
+        </TableCell>
       </TableRow>
       <TableRow>
         <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
           <Collapse in={arrowOpen} timeout="auto" unmountOnExit>
             <Typography gutterBottom component="div">
-              {row.notes}
+              {row?.result}
             </Typography>
           </Collapse>
         </TableCell>
@@ -75,14 +82,14 @@ function Row(props: { row: Prescription; handleOpenDialog: (id: string) => void 
   );
 }
 
-export default function ManagePrescription() {
+export default function ManageAppointment() {
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(5);
-  const [datas, setDatas] = React.useState<Prescription[]>([]);
+  const [datas, setDatas] = React.useState<Appointment[]>([]);
   const [dataChange, setDataChange] = React.useState(false);
   const [open, setOpen] = React.useState(false);
-  const [selectedPrescription, setSelectedPrescription] = React.useState<Prescription | null>(null);
-  const [addPrescription, setAddPrescription] = React.useState(false);
+  const [selectedAppointment, setSelectedAppointment] = React.useState<Appointment | null>(null);
+  const [addAppointment, setAddAppointment] = React.useState(false);
   const [snackbarOpen, setSnackBarOpen] = React.useState(false);
   const [alertMessage, setAllertMessage] = React.useState("");
 
@@ -93,7 +100,7 @@ export default function ManagePrescription() {
   const handleOpenDialog = (id: string) => {
     setOpen(true);
     const filteredData = datas.filter((data) => data.id === id);
-    setSelectedPrescription(filteredData[0]);
+    setSelectedAppointment(filteredData[0]);
   };
 
   const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -119,31 +126,24 @@ export default function ManagePrescription() {
 
   const fetchData = async () => {
     try {
-      const q = query(collection(db, "prescriptions"));
+      const q = query(collection(db, "appointments"));
       const querySnapshot = await getDocs(q);
-      const prescriptions: Prescription[] = [];
+      const appointments: Appointment[] = [];
 
       for (const doc1 of querySnapshot.docs) {
-        const prescriptionData = doc1.data();
-        const doctorRef = prescriptionData.doctorID;
-        const queueRef = prescriptionData.queueID;
-        const patientRef = prescriptionData.patientID;
+        const appointmentData = doc1.data();
+        const doctorRef = appointmentData.doctorID;
+        const bedRef = appointmentData.bedID;
+        const patientRef = appointmentData.patientID;
 
         let doctorData = null;
-        let queueData = null;
         let patientData = null;
+        let bedData = null;
 
         if (doctorRef) {
           const doctorDocSnapshot = await getDoc(doc(db, "staffs", doctorRef));
           if (doctorDocSnapshot.exists()) {
             doctorData = doctorDocSnapshot.data();
-          }
-        }
-
-        if (queueRef) {
-          const queueDocSnapshot = await getDoc(doc(db, "queue", queueRef));
-          if (queueDocSnapshot.exists()) {
-            queueData = queueDocSnapshot.data();
           }
         }
 
@@ -154,67 +154,87 @@ export default function ManagePrescription() {
           }
         }
 
-        const prescription = {
+        if (bedRef) {
+          const bedDocSnapshot = await getDoc(doc(db, "beds", bedRef));
+          if (bedDocSnapshot.exists()) {
+            bedData = bedDocSnapshot.data();
+          }
+        }
+
+        const appointment = {
           id: doc1.id,
-          queue: queueData,
-          roomNumber: doc1.data().roomNumber,
-          notes: doc1.data().notes,
-          doctor: doctorData,
           patient: patientData,
+          doctor: doctorData,
+          roomID: doc1.data().roomID,
+          bed: bedData,
+          queueCategory: doc1.data().queueCategory,
+          queueNumber: doc1.data().queueNumber,
           status: doc1.data().status,
+          appointmentDate: dayjs(doc1.data().appointmentDate.toDate()),
+          result: doc1.data().result,
         };
 
-        prescriptions.push(prescription);
+        appointments.push(appointment);
       }
-      setDatas(prescriptions);
+      setDatas(appointments);
+      console.log(appointments);
     } catch (error) {
       console.log(error);
     }
   };
 
-  const header = ["", "ID", "Queue Type", "Room Number", "Doctor Name", "Patient Name", "Status", ""];
+  const header = ["", "Patient Name", "Doctor Name", "Room Number", "Bed Number", "Appointment Date", "Queue Number", "Queue Category", "Appointment Status", " "];
 
   const handleCloseDialog = () => {
-    setAddPrescription(false);
-    setSelectedPrescription(null);
+    setAddAppointment(false);
+    setSelectedAppointment(null);
     setOpen(false);
   };
 
-  const handleOpenAddPrescription = () => {
-    setSelectedPrescription(null);
-    setAddPrescription(true);
+  const handleOpenAddAppointment = () => {
+    setSelectedAppointment(null);
+    setAddAppointment(true);
     setOpen(true);
   };
 
-  const handleAddPrescription = async () => {
-    const newPrescriptionRef = doc(collection(db, "prescriptions"));
+  const handleAddAppointment = async () => {
+    const newAppointmentRef = doc(collection(db, "appointments"));
 
-    const newPrescriptionData = {
-      ...selectedPrescription,
-      id: newPrescriptionRef.id,
+    const newAppointmentData = {
+      ...selectedAppointment,
+      id: newAppointmentRef.id,
     };
 
-    await setDoc(newPrescriptionRef, newPrescriptionData);
+    await setDoc(newAppointmentRef, newAppointmentData);
 
     setOpen(false);
     setDataChange(true);
-    setAllertMessage("Successfully Added New Prescription");
+    setAllertMessage("Successfully Added New Appointment");
     setSnackBarOpen(true);
   };
 
-  const handleUpdatePrescription = async () => {
-    const PrescriptionRef = doc(db, "Patients", selectedPrescription.id);
-    const PrescriptionSnapshot = await getDoc(PrescriptionRef);
+  const handleUpdateAppointment = async () => {
+    const AppointmentRef = doc(db, "Patients", selectedAppointment.id);
+    const AppointmentSnapshot = await getDoc(AppointmentRef);
 
-    if (PrescriptionSnapshot.exists()) {
+    if (AppointmentSnapshot.exists()) {
       const updatedData = {
-        ...selectedPrescription,
+        ...selectedAppointment,
       };
-      await updateDoc(PrescriptionRef, updatedData);
+      await updateDoc(AppointmentRef, updatedData);
     }
     setOpen(false);
     setDataChange(true);
     setAllertMessage("Sucessfully Update Patient");
+    setSnackBarOpen(true);
+  };
+
+  const handleDeleteAppointment = async (id: string) => {
+    const documentRef = doc(db, "appointments", id);
+    deleteDoc(documentRef);
+    setOpen(false);
+    setDataChange(true);
+    setAllertMessage("Sucessfully Delete Appointment");
     setSnackBarOpen(true);
   };
 
@@ -224,162 +244,12 @@ export default function ManagePrescription() {
         <Box sx={{ width: "100%" }}>
           <Paper sx={{ width: "100%", mb: 2 }}>
             <EnhancedTableToolbar name="Manage Appointment" showSearch={false} showFilter={false} searchQuery={""} setSearchQuery={null} filterOption={null} setFilterValue={null} />
-            <Dialog open={open} onClose={() => handleCloseDialog()} fullWidth={true} maxWidth="md">
-              <DialogTitle>Prescription Detail</DialogTitle>
-              <DialogContent>
-                <Table>
-                  <TableBody>
-                    <TableRow>
-                      <TableCell>ID</TableCell>
-                      <TableCell>
-                        <TextField
-                          required
-                          id="id"
-                          name="id"
-                          autoFocus
-                          fullWidth={true}
-                          disabled={selectedPrescription !== null} // Disable the TextField if selectedPrescription is not null
-                          value={selectedPrescription ? selectedPrescription.id : ""}
-                          onChange={(e) => {
-                            setSelectedPrescription((prevPrescription) => ({
-                              ...prevPrescription,
-                              id: e.target.value,
-                            }));
-                          }}
-                        />
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>Queue Type</TableCell>
-                      <TableCell>
-                        <Select
-                          labelId="queue-label"
-                          id="queue"
-                          name="queue"
-                          fullWidth
-                          value={selectedPrescription ? selectedPrescription.queue.name : ""}
-                          onChange={(e) => {
-                            setSelectedPrescription((prevPrescription) => ({
-                              ...prevPrescription,
-                              queue: {
-                                ...prevPrescription.queue,
-                                name: e.target.value as string,
-                              },
-                            }));
-                          }}
-                        >
-                          <MenuItem value="Normal">Normal</MenuItem>
-                          <MenuItem value="Urgent">Urgent</MenuItem>
-                        </Select>
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>Room Number</TableCell>
-                      <TableCell>
-                        <TextField
-                          required
-                          id="price"
-                          name="price"
-                          autoFocus
-                          fullWidth={true}
-                          value={selectedPrescription ? selectedPrescription.roomNumber : ""}
-                          onChange={(e) => {
-                            setSelectedPrescription((prevPrescription) => ({
-                              ...prevPrescription,
-                              roomNumber: e.target.value,
-                            }));
-                          }}
-                        />
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>Doctor Name</TableCell>
-                      <TableCell>
-                        <Select
-                          labelId="doctor-label"
-                          id="doctor"
-                          name="doctor"
-                          fullWidth
-                          value={selectedPrescription ? selectedPrescription.queue.name : ""}
-                          onChange={(e) => {
-                            setSelectedPrescription((prevPrescription) => ({
-                              ...prevPrescription,
-                              queue: {
-                                ...prevPrescription.queue,
-                                name: e.target.value as string,
-                              },
-                            }));
-                          }}
-                        >
-                          <MenuItem value="Normal">Damian</MenuItem>
-                          <MenuItem value="Urgent">Urgent</MenuItem>
-                        </Select>
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>Patient Name</TableCell>
-                      <TableCell>
-                        <TextField
-                          required
-                          id="description"
-                          name="description"
-                          autoFocus
-                          fullWidth={true}
-                          value={selectedPrescription ? selectedPrescription.patient.name : ""}
-                          onChange={(e) => {
-                            setSelectedPrescription((prevPrescription) => ({
-                              ...prevPrescription,
-                              patient: {
-                                ...prevPrescription.patient,
-                                name: e.target.value,
-                              },
-                            }));
-                          }}
-                        />
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>Status</TableCell>
-                      <TableCell>
-                        <TextField
-                          required
-                          id="weight"
-                          name="weight"
-                          autoFocus
-                          fullWidth={true}
-                          value={selectedPrescription ? selectedPrescription.status : ""}
-                          onChange={(e) => {
-                            setSelectedPrescription((prevPrescription) => ({
-                              ...prevPrescription,
-                              status: e.target.value,
-                            }));
-                          }}
-                        />
-                      </TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </DialogContent>
-              <DialogActions>
-                {addPrescription === true ? (
-                  <Button variant="contained" color="primary" onClick={() => handleAddPrescription()}>
-                    Add
-                  </Button>
-                ) : (
-                  <>
-                    <Button variant="contained" color="primary" onClick={() => handleUpdatePrescription()}>
-                      Update
-                    </Button>
-                  </>
-                )}
-              </DialogActions>
-            </Dialog>
             <TableContainer>
               <Table sx={{ minWidth: 750 }} aria-labelledby="tableTitle" size={"medium"}>
                 <TableHeader header={header} />
                 <TableBody>
                   {visibleRows.map((row, index) => (
-                    <Row key={row.id} row={row} handleOpenDialog={handleOpenDialog} />
+                    <Row key={row.id} row={row} handleOpenDialog={handleOpenDialog} handleDeleteAppointment={handleDeleteAppointment} />
                   ))}
                   {emptyRows > 0 && (
                     <TableRow
@@ -404,7 +274,7 @@ export default function ManagePrescription() {
             bottom: "20px",
             right: "20px",
           }}
-          onClick={() => handleOpenAddPrescription()}
+          onClick={() => handleOpenAddAppointment()}
         >
           <AddIcon />
         </Fab>

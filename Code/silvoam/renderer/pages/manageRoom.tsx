@@ -585,7 +585,7 @@ function JobListDialog({ open, jobList, setOpen, room }) {
       <DialogTitle>Job List</DialogTitle>
       <DialogContent dividers>
         <div style={{ maxHeight: "100%", overflowY: "auto" }}>
-          {room?.bedList.map((bed) => (
+          {room?.bedList?.map((bed) => (
             <React.Fragment key={bed?.number}>
               <Typography variant="h6">Bed Number {bed?.number}</Typography>
               <List component="div" disablePadding>

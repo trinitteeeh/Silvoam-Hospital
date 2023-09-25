@@ -49,10 +49,10 @@ function Row(props: { row: Prescription; handleOpenDialog: (id: string) => void 
         <TableCell component="th" scope="row">
           {row.id}
         </TableCell>
-        <TableCell>{row.queue.name}</TableCell>
+        <TableCell>{row.queue?.name}</TableCell>
         <TableCell>{row.roomNumber}</TableCell>
-        <TableCell>{row.doctor.name}</TableCell>
-        <TableCell>{row.patient.name}</TableCell>
+        <TableCell>{row.doctor?.name}</TableCell>
+        <TableCell>{row.patient?.name}</TableCell>
         <TableCell>{row.status}</TableCell>
         <TableCell style={{ paddingRight: 0, marginRight: 0 }}>
           <Radio checked={isChecked} icon={isHovered ? <CheckIcon /> : <Radio />} checkedIcon={<CheckIcon />} onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)} />
@@ -90,7 +90,6 @@ export default function ManagePrescription() {
   const [patientList, setPatientList] = React.useState([]);
   const [doctorList, setDoctorList] = React.useState([]);
   const [bedList, setBedList] = React.useState([]);
-  const [medicineList, setMedicineList] = React.useState([]);
 
   const handleChangePage = (event: unknown, newPage: number) => {
     setPage(newPage);
@@ -131,8 +130,6 @@ export default function ManagePrescription() {
 
       const bedData = await getAllData("beds");
       setBedList(bedData);
-      const medicineData = await getAllData("medicines");
-      setMedicineList(medicineData);
 
       for (const doc1 of querySnapshot.docs) {
         const prescriptionData = doc1.data();
@@ -174,7 +171,6 @@ export default function ManagePrescription() {
           patient: patientData,
           status: doc1.data().status,
           bed: bedData.find((bed) => bed?.id === doc1.data().bedID),
-          medicineList: medicineData.filter((element) => doc1.data().medicineList.includes(element)),
         };
 
         prescriptions.push(prescription);
@@ -187,6 +183,8 @@ export default function ManagePrescription() {
         setDoctorList(doctorDatas);
 
         const roomList = await getAllRoom();
+        console.log("ROOMS");
+        console.log(roomList);
         setRoomList(roomList);
       }
       setDatas(prescriptions);
@@ -212,19 +210,20 @@ export default function ManagePrescription() {
   const handleAddPrescription = async () => {
     console.log("data");
     console.log(selectedPrescription);
-    // const newPrescriptionRef = doc(collection(db, "prescriptions"));
+    const newPrescriptionRef = doc(collection(db, "prescriptions"));
 
-    // const newPrescriptionData = {
-    //   ...selectedPrescription,
-    //   id: newPrescriptionRef.id,
-    // };
+    const newPrescriptionData = {
+      ...selectedPrescription,
+      id: newPrescriptionRef.id,
+      patientID: selectedPrescription.patient.id,
+    };
 
-    // await setDoc(newPrescriptionRef, newPrescriptionData);
+    await setDoc(newPrescriptionRef, newPrescriptionData);
 
-    // setOpen(false);
-    // setDataChange(true);
-    // setAllertMessage("Successfully Added New Prescription");
-    // setSnackBarOpen(true);
+    setOpen(false);
+    setDataChange(true);
+    setAllertMessage("Successfully Added New Prescription");
+    setSnackBarOpen(true);
   };
 
   const handleUpdatePrescription = async () => {
@@ -397,46 +396,6 @@ export default function ManagePrescription() {
                             }));
                           }}
                         />
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>Medicine</TableCell>
-                      <TableCell>
-                        <Select
-                          labelId="demo-multiple-chip-label"
-                          id="demo-multiple-chip"
-                          multiple
-                          onChange={(e) => {
-                            const selectedValues = Array.isArray(e.target.value) ? e.target.value : [e.target.value]; // Ensure selectedValues is always an array
-                            setSelectedPrescription((prevData) => ({
-                              ...prevData,
-                              medicineList: [
-                                ...prevData.medicineList,
-                                ...selectedValues.map((value) => {
-                                  const selectedMedicine = medicineList.find((medicine) => medicine.id === value);
-                                  if (selectedMedicine) {
-                                    return selectedMedicine;
-                                  }
-                                  return value;
-                                }),
-                              ],
-                            }));
-                          }}
-                          input={<OutlinedInput id="select-multiple-chip" label="Chip" />}
-                          renderValue={(selected) => (
-                            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-                              {(selected as string[]).map((value) => (
-                                <Chip key={value} label={value} />
-                              ))}
-                            </Box>
-                          )}
-                        >
-                          {medicineList.map((data) => (
-                            <MenuItem key={data?.id} value={data?.id}>
-                              {data?.name}
-                            </MenuItem>
-                          ))}
-                        </Select>
                       </TableCell>
                     </TableRow>
                   </TableBody>

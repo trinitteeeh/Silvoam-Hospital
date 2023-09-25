@@ -20,6 +20,7 @@ function preventDefault(event: React.MouseEvent) {
   event.preventDefault();
 }
 
+
 export default function Request() {
   const [datas, setDatas] = React.useState<Patient[]>([]);
   const [dataChange, setDataChange] = React.useState(false);

@@ -27,6 +27,7 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import AuthContext from "../utils/AuthProvider";
 import AddIcon from "@mui/icons-material/Add";
 import { handleDeleteBed, handleEscortPatient, handleMakeBedAvailable, handleUseAmbulance } from "../utils/CompleteJob";
+import { checkDayChange } from "../utils/CheckDayChange";
 
 const defaultTheme = createTheme();
 
@@ -292,6 +293,8 @@ const JobTable = () => {
   const { user } = React.useContext(AuthContext);
   const [staffList, setStaffList] = React.useState([]);
   const [isChecked, setIsChecked] = React.useState(false);
+  const [searchQuery, setSearchQuery] = React.useState("");
+  const [searchResults, setSearchResults] = React.useState([]);
 
   const handleJobCompleted = async () => {
     console.log("MASUK");
@@ -458,22 +461,32 @@ const JobTable = () => {
     }
   };
 
+  const handleSeachQueryChange = (query) => {
+    setSearchQuery(query);
+    const formattedQuery = searchQuery.toLowerCase();
+    const filteredDatas = jobDatas.filter((data) => data.name.toLowerCase().includes(formattedQuery));
+    setSearchResults(filteredDatas);
+    console.log(searchQuery);
+  };
+
+  const filteredDatas = searchQuery ? searchResults : jobDatas;
+
   const header = [" ", "Name", "Status", "Patient", "Room", "Category", "Assign Date", "Due Date", ""];
 
   return (
     <Box sx={{ width: "100%" }}>
       <Paper sx={{ width: "100%", mb: 2 }}>
-        <TableToolbar name="Jobs" showSearch={true} showFilter={false} searchQuery="" setSearchQuery={null} filterOption={null} setFilterValue={null} />
+        <TableToolbar name="Jobs" showSearch={true} showFilter={false} searchQuery={searchQuery} setSearchQuery={handleSeachQueryChange} filterOption={null} setFilterValue={null} />
         <AddJobDialog handleConfirm={handleAddJob} open={openDialogForm} setData={setSelectedJob} setOpen={setOpenDialogForm} roomData={roomList} staffData={staffList} />
         <TableContainer>
           <Table sx={{ minWidth: 750 }} aria-labelledby="tableTitle" size={"medium"}>
             <TableHeader header={header} />
             <TableBody>
               {isChecked ? (
-                <>{jobDatas.map((row) => row?.status === "Incomplete" && <JobRow key={row?.id} row={row} handleJobCompleted={handleJobCompleted} setSelectedJob={setSelectedJob} selectedJob={selectedJob} />)}</>
+                <>{filteredDatas.map((row) => row?.status === "Incomplete" && <JobRow key={row?.id} row={row} handleJobCompleted={handleJobCompleted} setSelectedJob={setSelectedJob} selectedJob={selectedJob} />)}</>
               ) : (
                 <>
-                  {jobDatas
+                  {filteredDatas
                     .filter((job) => job?.staff?.id === user?.id)
                     .map((row) => row?.status === "Incomplete" && <JobRow key={row?.id} row={row} handleJobCompleted={handleJobCompleted} setSelectedJob={setSelectedJob} selectedJob={selectedJob} />)}
                 </>
@@ -530,9 +543,9 @@ function ReportRow(props: { row: Report }) {
         <TableCell component="th" scope="row">
           {row.roomNumber}
         </TableCell>
-        <TableCell>{row.patient.name}</TableCell>
-        <TableCell>{row.dateReported.format("DD/MM/YYYY - hh:mm:ss")}</TableCell>
-        <TableCell>{row.reportedBy.name}</TableCell>
+        <TableCell>{row.patient?.name}</TableCell>
+        <TableCell>{row.dateReported?.format("DD/MM/YYYY - hh:mm:ss")}</TableCell>
+        <TableCell>{row.reportedBy?.name}</TableCell>
         <TableCell>{row.division}</TableCell>
       </TableRow>
       <TableRow>
